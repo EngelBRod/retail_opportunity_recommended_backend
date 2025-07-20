@@ -1,13 +1,17 @@
-type PRODUCT = Array<{
+type PRODUCT_TYPE = Array<{
     id: string;
     name: string;
 }>;
 
-const PRODUCT: PRODUCT = [{
-    id: 'A',
-    name: 'Shoes',
-}, {
-    id: 'B',
-    name:'Shirt'
-}];
+const PRODUCT: PRODUCT_TYPE = [
+    {
+        id: 'A',
+        name: 'Shoes',
+    },
+    {
+        id: 'B',
+        name: 'Shirt',
+    },
+];
 
+export default PRODUCT;

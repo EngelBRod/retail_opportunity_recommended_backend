@@ -1,104 +1,148 @@
 import Inventory from '../../../DB/Inventory';
 import Consumption_History from '../../../DB/Consumption_History';
+import Product from '../../../DB/Product';
 
 export const queryGetProductsByStore = (store_id) => {
-    const product_store = Inventory.filter((value) => value.store_id === store_id);
+    const product_store = Inventory.filter(
+        (value) => value.store_id === store_id
+    );
 
-    const products = Object.groupBy(product_store, value => value.product_id);
+    const products = Object.groupBy(product_store, (value) => value.product_id);
     //console.log(products);
 
     // for (const [key,product] of Object.entries(products)){
 
     // }
-    const history = Object.entries(products).map(([key, value]) =>
-        
-    {
+    const history = Object.entries(products).map(([key, value]) => {
         console.log(key);
-        
+
+        const product_name = productName(key);
+        const score_avg = scoreAverageCalculator(key, value[0].store_id);
+        const rejection_rate = rejectionsCalculator(key, value[0].store_id);
+        const daily_sales_avg = dailySalesAverage(value);
+        const all_stores_sales_average = allStoresDailySalesAverage(key);
+        const daily_sales_performance =
+            daily_sales_avg / all_stores_sales_average;
+
+        const rejection_score = (1 - rejection_rate) * 5;
+        const daily_sales_score = daily_sales_performance * 5;
+        const recommended_score =
+            score_avg + rejection_score + daily_sales_score;
+
         return {
-            score_avg: scoreAverageCalculator(key,value[0].store_id),
-            rejection_rate: rejectionsCalculator(key, value[0].store_id),
-            daily_sales_avg:dailySalesAverage(value),
-            
-        }
-            
-        ;
+            product_name,
+            score_avg,
+            rejection_rate,
+            daily_sales_avg,
+            daily_sales_performance,
+            recommended_score,
+        };
+    });
+
+    history.sort((a, b) => b.recommended_score - a.recommended_score);
+
+    if (history.length) {
+        return {
+            message: 'success',
+            data: history,
+        };
+    } else {
+        return {
+            message: 'no data',
+            data: history,
+        };
     }
-        
-    
-    );
 
     console.log(history);
 };
 
+const scoreAverageCalculator = (product_id, store_id) => {
+    const products = Consumption_History.filter(
+        (product) =>
+            product.product_id === product_id &&
+            product.performed_action === 'Consumed' &&
+            store_id === product.store_id
+    );
 
-const scoreAverageCalculator = (product_id,store_id) => {
-
-    const products = Consumption_History.filter((product) => product.product_id === product_id && product.performed_action === 'Consumed'&& store_id=== product.store_id);
-    
     const total = products.length;
 
-    const sum = products.reduce((accumulator, currentValue) => accumulator + currentValue.score, 0);
-    
+    const sum = products.reduce(
+        (accumulator, currentValue) => accumulator + currentValue.score,
+        0
+    );
+
     const avg = sum / total;
     return avg;
 };
 
-const rejectionsCalculator = (product_id,store_id) => {
+const productName = (product_id) => {
+    const result = Product.filter((product) => product.id === product_id);
 
+    return result[0].name;
+};
 
+const rejectionsCalculator = (product_id, store_id) => {
     const rejected_products = Consumption_History.filter(
         (product) =>
             product.product_id === product_id &&
             product.performed_action === 'Rejected' &&
             store_id === product.store_id
     );
-    const rejection_sum = rejected_products.reduce((accumulator, currentValue) => accumulator + currentValue.qty, 0);
+    const rejection_sum = rejected_products.reduce(
+        (accumulator, currentValue) => accumulator + currentValue.qty,
+        0
+    );
     const all_products = Consumption_History.filter(
         (product) =>
-            product.product_id === product_id &&
-            store_id === product.store_id
+            product.product_id === product_id && store_id === product.store_id
     );
     const all_products_sum = all_products.reduce(
         (accumulator, currentValue) => accumulator + currentValue.qty,
         0
     );
-    // Consumption_History.forEach((value) => {
-    //     if (value.product_id === product_id && value.store_id === store_id) {
-    //         count++;
-    //         if (value.performed_action === 'Rejected') {
-    //             rejections++;
-    //         }
-    //     }
-    // });
 
     const rejections_rate = rejection_sum / all_products_sum;
     return rejections_rate;
 };
 
 const dailySalesAverage = (placements) => {
-
     placements.sort((a, b) => b.placement_date - a.placement_date);
 
     const average = placements.map((value) => {
         if (value.qty_left !== 0) {
             return (
                 (value.qty_placed - value.qty_left) /
-                (dateDifference(new Date(), value.placement_date))
+                dateDifference(new Date(), value.placement_date)
             );
         } else {
-            return value.qty_placed / dateDifference(new Date(), value.placement_date);
+            const latest_date = latestSale(value.placement_batch);
+            return (
+                value.qty_placed /
+                dateDifference(latest_date, value.placement_date)
+            );
         }
     });
-   
-    const sum = average.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+
+    const sum = average.reduce(
+        (accumulator, currentValue) => accumulator + currentValue,
+        0
+    );
     const result = sum / average.length;
     return result;
 };
 
+const allStoresDailySalesAverage = (product_id) => {
+    const all_placements = Inventory.filter(
+        (placement) => placement.product_id === product_id
+    );
+
+    const all_sales_average = dailySalesAverage(all_placements);
+
+    //console.log(all_sales_average);
+    return all_sales_average;
+};
 
 const dateDifference = (date1: Date, date2: Date) => {
-    
     const utc_new_date = date1.getTime();
     const utc_old_date = date2.getTime();
 
@@ -108,8 +152,16 @@ const dateDifference = (date1: Date, date2: Date) => {
 
     const diff_days = Math.round(diff_milliseconds / one_day_milliseconds);
 
-
     return diff_days;
+};
 
+const latestSale = (placement_id) => {
+    const sales = Consumption_History.filter(
+        (value) =>
+            value.placement_id === placement_id &&
+            value.performed_action === 'Consumed'
+    );
 
+    sales.sort((a, b) => b.consumption_date - a.consumption_date);
+    return sales[0].consumption_date;
 };
