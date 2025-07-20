@@ -6,7 +6,7 @@ export const httpGetAllStores = (req: Request, res: Response) => {
   
     try {
         const { place } = req.query;
-        const stores = queryGetAllStores(place);
+        const stores = queryGetAllStores(place.toString());
         res.status(200).json(stores);
     } catch (error) {
         res.status(400).json({ message: error, data: [] });
