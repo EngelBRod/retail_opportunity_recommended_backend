@@ -3,19 +3,17 @@ import Consumption_History from '../../../DB/Consumption_History';
 import Product from '../../../DB/Product';
 
 export const queryGetProductsByStore = (store_id) => {
+
+    //get all inventory placement & items for given store
     const product_store = Inventory.filter(
         (value) => value.store_id === store_id
     );
 
+    //group placements by product
     const products = Object.groupBy(product_store, (value) => value.product_id);
-    //console.log(products);
 
-    // for (const [key,product] of Object.entries(products)){
-
-    // }
+    // creates placement recommendation score by product
     const history = Object.entries(products).map(([key, value]) => {
-        console.log(key);
-
         const product_name = productName(key);
         const score_avg = scoreAverageCalculator(key, value[0].store_id);
         const rejection_rate = rejectionsCalculator(key, value[0].store_id);
@@ -53,9 +51,9 @@ export const queryGetProductsByStore = (store_id) => {
         };
     }
 
-    console.log(history);
 };
 
+//calculates score average by product & by store
 const scoreAverageCalculator = (product_id, store_id) => {
     const products = Consumption_History.filter(
         (product) =>
@@ -75,12 +73,15 @@ const scoreAverageCalculator = (product_id, store_id) => {
     return avg;
 };
 
+//get product name
 const productName = (product_id) => {
     const result = Product.filter((product) => product.id === product_id);
 
     return result[0].name;
 };
 
+
+//calculates rejection rate by product & by store
 const rejectionsCalculator = (product_id, store_id) => {
     const rejected_products = Consumption_History.filter(
         (product) =>
@@ -105,15 +106,18 @@ const rejectionsCalculator = (product_id, store_id) => {
     return rejections_rate;
 };
 
+//calculates sales' daily average ( taking into consideration the time a product has in the store  (placement date - current or final date))
 const dailySalesAverage = (placements) => {
     placements.sort((a, b) => b.placement_date - a.placement_date);
 
     const average = placements.map((value) => {
+        //if item left use difference between current date and placement date
         if (value.qty_left !== 0) {
             return (
                 (value.qty_placed - value.qty_left) /
                 dateDifference(new Date(), value.placement_date)
             );
+        //if  no items left use the difference between latest sales date and placement date
         } else {
             const latest_date = latestSale(value.placement_batch);
             return (
@@ -131,6 +135,7 @@ const dailySalesAverage = (placements) => {
     return result;
 };
 
+// calculate sales' daily average by product, considering all stores
 const allStoresDailySalesAverage = (product_id) => {
     const all_placements = Inventory.filter(
         (placement) => placement.product_id === product_id
@@ -138,10 +143,10 @@ const allStoresDailySalesAverage = (product_id) => {
 
     const all_sales_average = dailySalesAverage(all_placements);
 
-    //console.log(all_sales_average);
     return all_sales_average;
 };
 
+//calculate difference in days between two dates
 const dateDifference = (date1: Date, date2: Date) => {
     const utc_new_date = date1.getTime();
     const utc_old_date = date2.getTime();
@@ -155,6 +160,7 @@ const dateDifference = (date1: Date, date2: Date) => {
     return diff_days;
 };
 
+// get the latest sales date for a given product
 const latestSale = (placement_id) => {
     const sales = Consumption_History.filter(
         (value) =>
