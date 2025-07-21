@@ -43,6 +43,25 @@ const INVENTORY: INVENTORY = [
         measurement_unit: 'units',
     },
     {
+        placement_batch: 'CC',
+        product_id: 'A',
+        store_id: 'A',
+        placement_date: new Date('6/19/2025'),
+        qty_placed: 100,
+        qty_left: 0,
+        measurement_unit: 'units',
+    },
+    {
+        placement_batch: 'CC2',
+        product_id: 'A',
+        store_id: 'B',
+        placement_date: new Date('6/19/2025'),
+        qty_placed: 200,
+        qty_left: 0,
+        measurement_unit: 'units',
+    },
+
+    {
         placement_batch: 'D',
         product_id: 'B',
         store_id: 'A',

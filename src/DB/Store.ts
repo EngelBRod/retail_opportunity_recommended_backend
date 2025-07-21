@@ -12,7 +12,7 @@ const STORE: STORE_TYPE = [
     },
     {
         id: 'B',
-        region_id: 'A',
+        region_id: 'F',
         name: 'JT Penny',
     },
     {
@@ -27,9 +27,9 @@ const STORE: STORE_TYPE = [
     },
     {
         id: 'E',
-        region_id: 'A',
-        name:'Feet Lockers'
-    }
+        region_id: 'D',
+        name: 'Feet Lockers',
+    },
 ]; 
 
 

@@ -24,6 +24,18 @@ const REGION: REGION_TYPE = [
         zipcode: '02108',
         state: 'Massachusetts',
     },
+    {
+        id: 'D',
+        city: 'New York City',
+        zipcode: '10002',
+        state: 'New York',
+    },
+    {
+        id: 'F',
+        city: 'Rochester',
+        zipcode: '14602',
+        state: 'New York',
+    },
 ];
 
 
