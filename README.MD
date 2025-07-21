@@ -13,3 +13,21 @@ or for placements completely  sold
 **(quantity_sold/last_sale_day-placement_day)** 
 
 >**Rejection rate**: What percentage of all the sales are rejected
+
+
+# Scalability
+
+ROR is in beta testing but is projected to scale to millions of users.
+Here are concepts to take into consideration for the system design:
+
+>CDN 
+
+>Load balancer geo-routed
+
+>Data Caching 
+
+>Data centers redundancies
+
+>Master/Slave database replication
+
+>Monitoring tools
